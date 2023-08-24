@@ -1,42 +1,52 @@
 CIRCUIT_NAME=plonky2
 CIRCUIT_PATH=../circuits/plonky2.circom
 INPUT_PATH=../test/data/proof.json
-POT_PATH=~/Downloads/powersOfTau28_hez_final_25.ptau
-RAPIDSNARK_PATH=../../../../rapidsnark/build/prover
+#POT_PATH=~/Downloads/powersOfTau28_hez_final_25.ptau
+POT_PATH=/home/ubuntu/plonky2-circom/powersOfTau28_hez_final_25.ptau
+RAPIDSNARK_PATH=/home/denis/rapidsnark/build/prover
 # node version > 18
 NODE_PATH=node
-SNARKJS_PATH=../../../../snarkjs/cli.js
+#SNARKJS_PATH=../../../../snarkjs/cli.js
+SNARKJS_PATH=/usr/local/bin/snarkjs
 NODE_PARAMS="--trace-gc --trace-gc-ignore-scavenger --max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
 
 echo "****COMPILING CIRCUIT****"
 start=$(date +%s)
 circom ${CIRCUIT_PATH} --r1cs --sym --c
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
 
 echo "****COMPILING WITNESS GENERATOR****"
 start=$(date +%s)
 cd ${CIRCUIT_NAME}_cpp && make -j && cd ..
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
 
 echo "****WITNESS GENERATION****"
 start=$(date +%s)
 ./${CIRCUIT_NAME}_cpp/${CIRCUIT_NAME} ${INPUT_PATH} ./witness.wtns
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
+
 
 echo "****GENERATING ZKEY 0****"
 # If failed: https://hackmd.io/@yisun/BkT0RS87q
 start=$(date +%s)
-#${NODE_PATH} ${NODE_PARAMS} ${SNARKJS_PATH} groth16 setup $CIRCUIT_NAME.r1cs ${POT_PATH} "$CIRCUIT_NAME"_0.zkey
+##${NODE_PATH} ${NODE_PARAMS} ${SNARKJS_PATH} groth16 setup $CIRCUIT_NAME.r1cs ${POT_PATH} "$CIRCUIT_NAME"_0.zkey
 ${NODE_PATH} ${NODE_PARAMS} ${SNARKJS_PATH} zkey new $CIRCUIT_NAME.r1cs ${POT_PATH} "$CIRCUIT_NAME"_0.zkey -v > zkey0.out
+##snarkjs zkey new $CIRCUIT_NAME.r1cs ${POT_PATH} "$CIRCUIT_NAME"_0.zkey -v > zkey0.out
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
+
 
 echo "****CONTRIBUTE TO PHASE 2 CEREMONY****"
 start=$(date +%s)
 ${NODE_PATH} ${NODE_PARAMS} ${SNARKJS_PATH} zkey contribute -verbose "$CIRCUIT_NAME"_0.zkey "$CIRCUIT_NAME".zkey -n="First phase2 contribution" -e="some random text" > contribute.out
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
 
@@ -49,13 +59,15 @@ echo "DONE ($((end - start))s)"
 echo "****EXPORTING VKEY****"
 start=$(date +%s)
 ${NODE_PATH} ${SNARKJS_PATH} zkey export verificationkey "$CIRCUIT_NAME".zkey verification_key.json -v
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
 
 echo "****GENERATING PROOF****"
 start=$(date +%s)
 ${RAPIDSNARK_PATH} "$CIRCUIT_NAME".zkey ./witness.wtns proof.json public.json
-#${NODE_PATH} ${SNARKJS_PATH} groth16 prove "$CIRCUIT_NAME".zkey ./witness.wtns proof.json public.json
+##${NODE_PATH} ${SNARKJS_PATH} groth16 prove "$CIRCUIT_NAME".zkey ./witness.wtns proof.json public.json
+#echo "ALREADY DONE"
 end=$(date +%s)
 echo "DONE ($((end - start))s)"
 
